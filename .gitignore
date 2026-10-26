@@ -1,0 +1,23 @@
+# 构建产物
+build/
+build-*/
+CMakeFiles/
+CMakeCache.txt
+CMakeUserPresets.json
+.qt/
+Makefile
+*.o
+*.obj
+
+# 可执行文件与动态库
+*.exe
+*.dll
+*.pdb
+*.ilk
+
+# 编辑器与系统文件
+.vs/
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
