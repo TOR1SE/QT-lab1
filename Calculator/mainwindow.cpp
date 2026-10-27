@@ -19,6 +19,7 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    applyStyleSheet();      // 注意：须在 setProperty 之后再让样式生效，且要在 Qt 计算样式前设置
     setupConnections();
     updateDisplay();
 }
@@ -406,9 +407,77 @@ void MainWindow::flashButton(QAbstractButton *button)
     });
 }
 
+/**
+ * @brief 加载样式表美化界面
+ *
+ * 为了避免在 QSS 中重复罗列十几个按钮名，这里先给按钮打上
+ * buttonRole 角色标记（digit / operator / equal / function），
+ * QSS 再用属性选择器统一描述外观。
+ */
 void MainWindow::applyStyleSheet()
 {
-    // TODO: 界面美化阶段实现
+    auto setRole = [](QPushButton *button, const char *role) {
+        if (button != nullptr) {
+            button->setProperty("buttonRole", QString::fromLatin1(role));
+        }
+    };
+
+    for (int i = 0; i <= 9; ++i) {
+        setRole(findChild<QPushButton *>(QStringLiteral("pushButton_%1").arg(i)), "digit");
+    }
+    setRole(ui->pushButton_Point, "digit");
+    setRole(ui->pushButton_Add, "operator");
+    setRole(ui->pushButton_Subtract, "operator");
+    setRole(ui->pushButton_Multiply, "operator");
+    setRole(ui->pushButton_Divide, "operator");
+    setRole(ui->pushButton_Equal, "equal");
+    setRole(ui->pushButton_Clear, "function");
+    setRole(ui->pushButton_Backspace, "function");
+    setRole(ui->pushButton_Percent, "function");
+    setRole(ui->pushButton_Sign, "function");
+
+    setStyleSheet(QStringLiteral(R"(
+        QMainWindow#MainWindow {
+            background-color: #F2F3F5;
+        }
+        QLabel#labelExpression {
+            color: #8A8F98;
+            padding-right: 6px;
+        }
+        QLineEdit#lineEditDisplay {
+            background-color: #FFFFFF;
+            border: 1px solid #E3E6EA;
+            border-radius: 12px;
+            padding-left: 14px;
+            padding-right: 14px;
+            color: #1D1D1F;
+        }
+        QPushButton {
+            border: none;
+            border-radius: 12px;
+            background-color: #FFFFFF;
+            color: #1D1D1F;
+        }
+        QPushButton:hover   { background-color: #EDF0F3; }
+        QPushButton:pressed { background-color: #DFE3E8; }
+
+        QPushButton[buttonRole="function"] {
+            background-color: #E7EAEE;
+            color: #3C4043;
+        }
+        QPushButton[buttonRole="function"]:hover   { background-color: #DBDFE4; }
+        QPushButton[buttonRole="function"]:pressed { background-color: #CDD1D7; }
+
+        QPushButton[buttonRole="operator"],
+        QPushButton[buttonRole="equal"] {
+            background-color: #1A73E8;
+            color: #FFFFFF;
+        }
+        QPushButton[buttonRole="operator"]:hover,
+        QPushButton[buttonRole="equal"]:hover   { background-color: #1765CC; }
+        QPushButton[buttonRole="operator"]:pressed,
+        QPushButton[buttonRole="equal"]:pressed { background-color: #1257B0; }
+    )"));
 }
 
 /**
