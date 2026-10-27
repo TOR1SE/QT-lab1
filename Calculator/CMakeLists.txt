@@ -74,6 +74,30 @@ if(BUILD_SELF_CHECK)
     set_target_properties(CalculatorSelfCheck PROPERTIES AUTOGEN_BUILD_DIR "${_autogen_dir}_selfcheck")
 endif()
 
+# ---------------------------------------------------------------------------
+# 演示模式：按脚本自动驱动计算器（点击 + 键盘事件），配合录屏生成测试视频
+# ---------------------------------------------------------------------------
+option(BUILD_DEMO "构建演示模式程序" ON)
+if(BUILD_DEMO)
+    add_executable(CalculatorDemo
+        tools/Demo/main.cpp
+        mainwindow.h
+        mainwindow.cpp
+        mainwindow.ui
+    )
+    target_include_directories(CalculatorDemo PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    target_link_libraries(CalculatorDemo PRIVATE Qt6::Widgets)
+    if(MSVC)
+        target_compile_options(CalculatorDemo PRIVATE /utf-8)
+    else()
+        target_compile_options(CalculatorDemo PRIVATE
+            -finput-charset=UTF-8
+            -fexec-charset=UTF-8
+        )
+    endif()
+    set_target_properties(CalculatorDemo PROPERTIES AUTOGEN_BUILD_DIR "${_autogen_dir}_demo")
+endif()
+
 # 保证源码与 QSS 中的中文在 MinGW/MSVC 下均不出现乱码
 if(MSVC)
     target_compile_options(Calculator PRIVATE /utf-8)
