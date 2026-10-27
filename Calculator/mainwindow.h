@@ -48,7 +48,9 @@ private:
 
     // ===== 辅助函数 =====
     void setupConnections();      // 建立信号与槽的关联
-    void updateDisplay();         // 刷新显示屏与表达式标签
+    void updateDisplay();         // 刷新显示屏
+    void updateExpressionLabel(); // 刷新上方的表达式标签（如 "12 +"）
+    void enterErrorState(const QString &message);   // 进入错误状态（如除零）
     void applyStyleSheet();       // 加载 QSS 样式表
     double executeOperation(double left, const QString &op, double right) const;
     QString formatResult(double value) const;   // 去掉多余的 0，控制显示精度
@@ -61,6 +63,7 @@ private:
     bool    m_waitingForNewOperand = true;  // true：下一个数字将开启新的操作数
     QString m_currentInput = QStringLiteral("0");  // 当前正在输入的操作数文本
     bool    m_hasError = false;         // 是否处于错误状态（如除零）
+    QString m_errorMessage;             // 错误状态下显示屏显示的提示文字
 };
 
 #endif // MAINWINDOW_H

@@ -4,6 +4,9 @@
 #include <QKeyEvent>
 #include <QPushButton>
 
+#include <cmath>
+#include <limits>
+
 namespace {
 // 显示屏最多允许输入的有效字符数（含小数点与负号），防止数字过长溢出
 constexpr int kMaxInputLength = 15;
@@ -70,8 +73,17 @@ void MainWindow::onButtonClicked()
         toggleSign();
     } else if (name == QStringLiteral("pushButton_Percent")) {
         applyPercent();
+    } else if (name == QStringLiteral("pushButton_Add")) {
+        applyOperator(QStringLiteral("+"));
+    } else if (name == QStringLiteral("pushButton_Subtract")) {
+        applyOperator(QStringLiteral("−"));
+    } else if (name == QStringLiteral("pushButton_Multiply")) {
+        applyOperator(QStringLiteral("×"));
+    } else if (name == QStringLiteral("pushButton_Divide")) {
+        applyOperator(QStringLiteral("÷"));
+    } else if (name == QStringLiteral("pushButton_Equal")) {
+        calculateEqual();
     }
-    // 四则运算符与等号将在下一步实现
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *event)
@@ -163,15 +175,76 @@ void MainWindow::clearAll()
     updateDisplay();
 }
 
+/**
+ * @brief 按下四则运算符
+ * @param op 运算符文本（+ − × ÷）
+ *
+ * 分三种情况：
+ *  1) 首次按下运算符  → 仅保存左操作数；
+ *  2) 连按多个运算符  → 只替换待执行的运算符，防止 "2 + × 3" 出错；
+ *  3) 已有左操作数且右操作数已输入 → 先完成上一次运算（支持 2+3+ 连续运算），
+ *     再把结果作为新的左操作数。
+ */
 void MainWindow::applyOperator(const QString &op)
 {
-    Q_UNUSED(op);
-    // TODO: 下一步实现
+    if (m_hasError) {
+        return;
+    }
+
+    if (m_pendingOperator.isEmpty()) {
+        // 情况 1：第一次按运算符，把当前显示屏内容记为第一个操作数
+        m_accumulatedValue = m_currentInput.toDouble();
+    } else if (m_waitingForNewOperand) {
+        // 情况 2：刚按过运算符还没输入新数字，即连续按运算符，只更新运算符
+        m_pendingOperator = op;
+        updateExpressionLabel();
+        return;
+    } else {
+        // 情况 3：连续运算，先把已经能算的部分算出来
+        const double result = executeOperation(m_accumulatedValue, m_pendingOperator,
+                                               m_currentInput.toDouble());
+        if (std::isnan(result)) {
+            enterErrorState(tr("除数不能为零"));
+            return;
+        }
+        m_accumulatedValue = result;
+        m_currentInput = formatResult(result);
+    }
+
+    m_pendingOperator = op;
+    m_waitingForNewOperand = true;   // 下一个输入的数字将作为第二个操作数
+    updateExpressionLabel();
+    updateDisplay();
 }
 
+/**
+ * @brief 按下等号：执行一次待执行的运算
+ */
 void MainWindow::calculateEqual()
 {
-    // TODO: 下一步实现
+    if (m_hasError || m_pendingOperator.isEmpty()) {
+        return;                       // 没有待执行的运算符时直接忽略
+    }
+
+    const double left  = m_accumulatedValue;
+    const double right = m_currentInput.toDouble();
+    const double result = executeOperation(left, m_pendingOperator, right);
+
+    ui->labelExpression->setText(QStringLiteral("%1 %2 %3 =")
+                                     .arg(formatResult(left),
+                                          m_pendingOperator,
+                                          formatResult(right)));
+
+    if (std::isnan(result)) {
+        enterErrorState(tr("除数不能为零"));
+        return;
+    }
+
+    m_currentInput = formatResult(result);
+    m_accumulatedValue = result;      // 结果可作为下一轮运算的左操作数
+    m_pendingOperator.clear();
+    m_waitingForNewOperand = true;    // 再输入数字则开启新的一次计算
+    updateDisplay();
 }
 
 /**
@@ -211,7 +284,34 @@ void MainWindow::applyPercent()
  */
 void MainWindow::updateDisplay()
 {
-    ui->lineEditDisplay->setText(m_currentInput);
+    ui->lineEditDisplay->setText(m_hasError ? m_errorMessage : m_currentInput);
+}
+
+/**
+ * @brief 刷新上方表达式标签，显示「已保存的操作数 待执行运算符」
+ */
+void MainWindow::updateExpressionLabel()
+{
+    if (m_pendingOperator.isEmpty()) {
+        ui->labelExpression->clear();
+    } else {
+        ui->labelExpression->setText(QStringLiteral("%1 %2")
+                                         .arg(formatResult(m_accumulatedValue),
+                                              m_pendingOperator));
+    }
+}
+
+/**
+ * @brief 进入错误状态并显示提示，此时除「清除」外的操作均被忽略
+ */
+void MainWindow::enterErrorState(const QString &message)
+{
+    m_hasError = true;
+    m_errorMessage = message;
+    m_pendingOperator.clear();
+    m_waitingForNewOperand = true;
+    m_accumulatedValue = 0.0;
+    updateDisplay();
 }
 
 void MainWindow::applyStyleSheet()
@@ -219,12 +319,28 @@ void MainWindow::applyStyleSheet()
     // TODO: 界面美化阶段实现
 }
 
+/**
+ * @brief 执行单次二元运算
+ * @return 运算结果；除数为 0 时返回 NaN，由调用方转换为错误提示
+ */
 double MainWindow::executeOperation(double left, const QString &op, double right) const
 {
-    Q_UNUSED(left);
-    Q_UNUSED(op);
-    Q_UNUSED(right);
-    return 0.0;
+    if (op == QStringLiteral("+")) {
+        return left + right;
+    }
+    if (op == QStringLiteral("−") || op == QStringLiteral("-")) {
+        return left - right;
+    }
+    if (op == QStringLiteral("×") || op == QStringLiteral("*")) {
+        return left * right;
+    }
+    if (op == QStringLiteral("÷") || op == QStringLiteral("/")) {
+        if (qFuzzyIsNull(right)) {
+            return std::numeric_limits<double>::quiet_NaN();   // 除零 → 交给上层处理
+        }
+        return left / right;
+    }
+    return right;
 }
 
 /**
