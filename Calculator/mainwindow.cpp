@@ -1,8 +1,10 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include <QAbstractButton>
 #include <QKeyEvent>
 #include <QPushButton>
+#include <QTimer>
 
 #include <cmath>
 #include <limits>
@@ -86,10 +88,72 @@ void MainWindow::onButtonClicked()
     }
 }
 
+/**
+ * @brief 键盘事件处理
+ *
+ * 思路：键盘按键不单独实现一套逻辑，而是翻译成与鼠标点击完全相同的调用
+ * （appendDigit / applyOperator / calculateEqual ...），唯一区别是额外让
+ * 对应按钮闪一下作为视觉反馈。这也是鼠标与键盘行为能保持一致的原因。
+ */
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
-    // TODO: 最后一步实现键盘事件
-    QMainWindow::keyPressEvent(event);
+    const int key = event->key();
+
+    // ---- 数字键（主键盘 0~9，以及带 KeypadModifier 的小键盘）----
+    if (key >= Qt::Key_0 && key <= Qt::Key_9) {
+        const int number = key - Qt::Key_0;
+        appendDigit(QString::number(number));
+        flashButton(findChild<QPushButton *>(QStringLiteral("pushButton_%1").arg(number)));
+        return;
+    }
+
+    switch (key) {
+    case Qt::Key_Plus:
+        applyOperator(QStringLiteral("+"));
+        flashButton(ui->pushButton_Add);
+        break;
+    case Qt::Key_Minus:
+        applyOperator(QStringLiteral("−"));
+        flashButton(ui->pushButton_Subtract);
+        break;
+    case Qt::Key_Asterisk:
+        applyOperator(QStringLiteral("×"));
+        flashButton(ui->pushButton_Multiply);
+        break;
+    case Qt::Key_Slash:
+        applyOperator(QStringLiteral("÷"));
+        flashButton(ui->pushButton_Divide);
+        break;
+    case Qt::Key_Equal:
+    case Qt::Key_Enter:      // 小键盘回车
+    case Qt::Key_Return:     // 主键盘回车
+        calculateEqual();
+        flashButton(ui->pushButton_Equal);
+        break;
+    case Qt::Key_Period:
+    case Qt::Key_Comma:      // 小键盘的逗号（部分键盘布局）
+        appendPoint();
+        flashButton(ui->pushButton_Point);
+        break;
+    case Qt::Key_Backspace:
+        backspace();
+        flashButton(ui->pushButton_Backspace);
+        break;
+    case Qt::Key_Percent:
+        applyPercent();
+        flashButton(ui->pushButton_Percent);
+        break;
+    case Qt::Key_Escape:
+        clearAll();
+        flashButton(ui->pushButton_Clear);
+        break;
+    case Qt::Key_Delete:
+        clearEntry();
+        break;
+    default:
+        QMainWindow::keyPressEvent(event);   // 其他按键（Tab、Alt 等）交给基类
+        return;
+    }
 }
 
 /**
@@ -170,8 +234,22 @@ void MainWindow::clearAll()
     m_pendingOperator.clear();
     m_waitingForNewOperand = true;
     m_hasError = false;
+    m_errorMessage.clear();
     ui->labelExpression->clear();
 
+    updateDisplay();
+}
+
+/**
+ * @brief 清除当前正在输入的操作数，不影响已保存的左操作数与运算符
+ */
+void MainWindow::clearEntry()
+{
+    if (m_hasError) {
+        clearAll();
+        return;
+    }
+    m_currentInput = QStringLiteral("0");
     updateDisplay();
 }
 
@@ -312,6 +390,20 @@ void MainWindow::enterErrorState(const QString &message)
     m_waitingForNewOperand = true;
     m_accumulatedValue = 0.0;
     updateDisplay();
+}
+
+/**
+ * @brief 键盘触发时让对应按钮短暂处于按下状态，提供视觉反馈
+ */
+void MainWindow::flashButton(QAbstractButton *button)
+{
+    if (button == nullptr) {
+        return;
+    }
+    button->setDown(true);
+    QTimer::singleShot(120, button, [button]() {
+        button->setDown(false);
+    });
 }
 
 void MainWindow::applyStyleSheet()

@@ -4,6 +4,7 @@
 #include <QMainWindow>
 
 QT_BEGIN_NAMESPACE
+class QAbstractButton;
 namespace Ui {
 class MainWindow;
 }
@@ -40,7 +41,8 @@ private:
     void appendDigit(const QString &digit);
     void appendPoint();
     void backspace();
-    void clearAll();
+    void clearAll();      // 全部清除（C / Esc）
+    void clearEntry();    // 只清除当前正在输入的操作数（Delete）
     void applyOperator(const QString &op);
     void calculateEqual();
     void toggleSign();
@@ -51,6 +53,7 @@ private:
     void updateDisplay();         // 刷新显示屏
     void updateExpressionLabel(); // 刷新上方的表达式标签（如 "12 +"）
     void enterErrorState(const QString &message);   // 进入错误状态（如除零）
+    void flashButton(QAbstractButton *button);      // 键盘操作时让对应按钮闪一下
     void applyStyleSheet();       // 加载 QSS 样式表
     double executeOperation(double left, const QString &op, double right) const;
     QString formatResult(double value) const;   // 去掉多余的 0，控制显示精度
