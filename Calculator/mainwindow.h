@@ -64,6 +64,9 @@ private:
     double  m_accumulatedValue = 0.0;   // 已保存的第一个操作数 / 上一次运算结果
     QString m_pendingOperator;          // 待执行的运算符（+ − × ÷）
     bool    m_waitingForNewOperand = true;  // true：下一个数字将开启新的操作数
+    QString m_lastOperator;             // 上一次完成的运算符，用于连按等号时重复运算
+    double  m_lastOperand = 0.0;        // 上一次完成的第二个操作数
+    bool    m_hasLastOperation = false; // 是否存在可重复的上一次运算
     QString m_currentInput = QStringLiteral("0");  // 当前正在输入的操作数文本
     bool    m_hasError = false;         // 是否处于错误状态（如除零）
     QString m_errorMessage;             // 错误状态下显示屏显示的提示文字

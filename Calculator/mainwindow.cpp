@@ -236,6 +236,9 @@ void MainWindow::clearAll()
     m_waitingForNewOperand = true;
     m_hasError = false;
     m_errorMessage.clear();
+    m_lastOperator.clear();
+    m_lastOperand = 0.0;
+    m_hasLastOperation = false;
     ui->labelExpression->clear();
 
     updateDisplay();
@@ -301,18 +304,31 @@ void MainWindow::applyOperator(const QString &op)
  */
 void MainWindow::calculateEqual()
 {
-    if (m_hasError || m_pendingOperator.isEmpty()) {
-        return;                       // 没有待执行的运算符时直接忽略
+    if (m_hasError) {
+        return;
     }
 
-    const double left  = m_accumulatedValue;
-    const double right = m_currentInput.toDouble();
-    const double result = executeOperation(left, m_pendingOperator, right);
+    double left = 0.0;
+    double right = 0.0;
+    QString op;
 
+    if (!m_pendingOperator.isEmpty()) {
+        // 常规情况：执行「已保存的左操作数 ? 当前输入的右操作数」
+        left = m_accumulatedValue;
+        right = m_currentInput.toDouble();
+        op = m_pendingOperator;
+    } else if (m_hasLastOperation) {
+        // 连按等号：重复上一次运算，如 2 + 3 = 5，再按 = 得 8
+        left = m_currentInput.toDouble();
+        right = m_lastOperand;
+        op = m_lastOperator;
+    } else {
+        return;                       // 既没有待执行运算，也没有历史运算
+    }
+
+    const double result = executeOperation(left, op, right);
     ui->labelExpression->setText(QStringLiteral("%1 %2 %3 =")
-                                     .arg(formatResult(left),
-                                          m_pendingOperator,
-                                          formatResult(right)));
+                                     .arg(formatResult(left), op, formatResult(right)));
 
     if (std::isnan(result)) {
         enterErrorState(tr("除数不能为零"));
@@ -323,6 +339,12 @@ void MainWindow::calculateEqual()
     m_accumulatedValue = result;      // 结果可作为下一轮运算的左操作数
     m_pendingOperator.clear();
     m_waitingForNewOperand = true;    // 再输入数字则开启新的一次计算
+
+    // 记住本次运算，供连按等号重复执行
+    m_lastOperator = op;
+    m_lastOperand = right;
+    m_hasLastOperation = true;
+
     updateDisplay();
 }
 
@@ -390,6 +412,9 @@ void MainWindow::enterErrorState(const QString &message)
     m_pendingOperator.clear();
     m_waitingForNewOperand = true;
     m_accumulatedValue = 0.0;
+    m_lastOperator.clear();
+    m_lastOperand = 0.0;
+    m_hasLastOperation = false;
     updateDisplay();
 }
 
