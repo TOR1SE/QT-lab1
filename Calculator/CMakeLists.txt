@@ -49,6 +49,31 @@ if(_non_ascii)
 endif()
 set_target_properties(Calculator PROPERTIES AUTOGEN_BUILD_DIR "${_autogen_dir}")
 
+# ---------------------------------------------------------------------------
+# 自测程序：以程序方式模拟点击与按键，对全部计算路径做回归验证
+# 退出码 0 表示所有用例通过，用于回归测试与边界场景验证
+# ---------------------------------------------------------------------------
+option(BUILD_SELF_CHECK "构建计算器自测程序" ON)
+if(BUILD_SELF_CHECK)
+    add_executable(CalculatorSelfCheck
+        tests/SelfCheck/main.cpp
+        mainwindow.h
+        mainwindow.cpp
+        mainwindow.ui
+    )
+    target_include_directories(CalculatorSelfCheck PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    target_link_libraries(CalculatorSelfCheck PRIVATE Qt6::Widgets)
+    if(MSVC)
+        target_compile_options(CalculatorSelfCheck PRIVATE /utf-8)
+    else()
+        target_compile_options(CalculatorSelfCheck PRIVATE
+            -finput-charset=UTF-8
+            -fexec-charset=UTF-8
+        )
+    endif()
+    set_target_properties(CalculatorSelfCheck PROPERTIES AUTOGEN_BUILD_DIR "${_autogen_dir}_selfcheck")
+endif()
+
 # 保证源码与 QSS 中的中文在 MinGW/MSVC 下均不出现乱码
 if(MSVC)
     target_compile_options(Calculator PRIVATE /utf-8)
