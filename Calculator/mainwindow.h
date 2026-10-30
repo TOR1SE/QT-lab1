@@ -47,6 +47,9 @@ private:
     void calculateEqual();
     void toggleSign();
     void applyPercent();
+    void applyInverse();  // 1/x 倒数
+    void applySquare();   // x² 平方
+    void applySqrt();     // √ 开平方
 
     // ===== 辅助函数 =====
     void setupConnections();      // 建立信号与槽的关联

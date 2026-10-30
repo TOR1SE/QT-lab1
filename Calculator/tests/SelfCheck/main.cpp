@@ -61,6 +61,9 @@ Qt::Key parseKey(const QString &text)
         {QStringLiteral("Escape"), Qt::Key_Escape},
         {QStringLiteral("Delete"), Qt::Key_Delete},
         {QStringLiteral("Percent"), Qt::Key_Percent},
+        {QStringLiteral("R"), Qt::Key_R},
+        {QStringLiteral("Q"), Qt::Key_Q},
+        {QStringLiteral("At"), Qt::Key_At},
     };
     return table.value(text, Qt::Key_unknown);
 }
@@ -71,6 +74,10 @@ const QString kEqualButton = QStringLiteral("pushButton_Equal");
 const QString kPointButton = QStringLiteral("pushButton_Point");
 const QString kPercentButton = QStringLiteral("pushButton_Percent");
 const QString kSignButton = QStringLiteral("pushButton_Sign");
+const QString kInverseButton = QStringLiteral("pushButton_Inverse");
+const QString kSquareButton = QStringLiteral("pushButton_Square");
+const QString kSqrtButton = QStringLiteral("pushButton_Sqrt");
+const QString kClearEntryButton = QStringLiteral("pushButton_ClearEntry");
 
 QString digitButton(int n)
 {
@@ -125,6 +132,20 @@ int main(int argc, char *argv[])
         {QStringLiteral("键盘小键盘数字与回车"),{QStringLiteral("Key:7"), QStringLiteral("Key:8"), QStringLiteral("Key:Slash"), QStringLiteral("Key:2"), QStringLiteral("Key:Return")}, QStringLiteral("39")},
         {QStringLiteral("鼠标键盘混合输入"),    {digitButton(1), digitButton(0), QStringLiteral("Key:Minus"), digitButton(4), QStringLiteral("Key:Equal")}, QStringLiteral("6")},
         {QStringLiteral("键盘乘除符号"),        {QStringLiteral("Key:6"), QStringLiteral("Key:Asterisk"), QStringLiteral("Key:7"), QStringLiteral("Key:Equal")}, QStringLiteral("42")},
+        {QStringLiteral("倒数"),                {digitButton(8), kInverseButton}, QStringLiteral("0.125")},
+        {QStringLiteral("倒数为零报错"),        {digitButton(0), kInverseButton}, QStringLiteral("除数不能为零")},
+        {QStringLiteral("倒数后接运算"),        {digitButton(8), kInverseButton, opButton("+"), digitButton(1), kEqualButton}, QStringLiteral("1.125")},
+        {QStringLiteral("平方"),                {digitButton(9), kSquareButton}, QStringLiteral("81")},
+        {QStringLiteral("负数平方"),            {digitButton(5), kSignButton, kSquareButton}, QStringLiteral("25")},
+        {QStringLiteral("开平方"),              {digitButton(8), digitButton(1), kSqrtButton}, QStringLiteral("9")},
+        {QStringLiteral("负数开方报错"),        {digitButton(5), kSignButton, kSqrtButton}, QStringLiteral("无效输入")},
+        {QStringLiteral("开方后接运算"),        {digitButton(8), digitButton(1), kSqrtButton, opButton("+"), digitButton(1), kEqualButton}, QStringLiteral("10")},
+        {QStringLiteral("平方后开方还原"),      {digitButton(7), kSquareButton, kSqrtButton}, QStringLiteral("7")},
+        {QStringLiteral("CE只清当前操作数"),    {digitButton(1), digitButton(2), opButton("+"), digitButton(3), kClearEntryButton, digitButton(4), kEqualButton}, QStringLiteral("16")},
+        {QStringLiteral("CE后再退格无效"),      {digitButton(1), digitButton(2), kClearEntryButton, kBackspaceButton}, QStringLiteral("0")},
+        {QStringLiteral("键盘r触发倒数"),       {QStringLiteral("Key:8"), QStringLiteral("Key:R")}, QStringLiteral("0.125")},
+        {QStringLiteral("键盘q触发平方"),       {QStringLiteral("Key:9"), QStringLiteral("Key:Q")}, QStringLiteral("81")},
+        {QStringLiteral("键盘@触发开方"),       {QStringLiteral("Key:8"), QStringLiteral("Key:1"), QStringLiteral("Key:At")}, QStringLiteral("9")},
     };
 
     int passed = 0;

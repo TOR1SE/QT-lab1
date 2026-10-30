@@ -32,7 +32,7 @@ const std::vector<Step> kScript = {
     {900,  false, 0, "pushButton_Add"},
     {900,  false, 0, "pushButton_3"},
     {900,  false, 0, "pushButton_Equal"},
-    {3500, false, 0, "pushButton_Clear"},
+    {2500, false, 0, "pushButton_Clear"},
     // ---- 键盘：45.6 − 12.3 = 33.3 ----
     {1500, true, Qt::Key_4, nullptr},
     {600,  true, Qt::Key_5, nullptr},
@@ -44,13 +44,13 @@ const std::vector<Step> kScript = {
     {600,  true, Qt::Key_Period, nullptr},
     {600,  true, Qt::Key_3, nullptr},
     {800,  true, Qt::Key_Return, nullptr},
-    {3500, false, 0, "pushButton_Clear"},
+    {2500, false, 0, "pushButton_Clear"},
     // ---- 键盘：9 × 6 = 54 ----
     {1200, true, Qt::Key_9, nullptr},
     {700,  true, Qt::Key_Asterisk, nullptr},
     {700,  true, Qt::Key_6, nullptr},
     {700,  true, Qt::Key_Return, nullptr},
-    {3000, false, 0, "pushButton_Clear"},
+    {2500, false, 0, "pushButton_Clear"},
     // ---- 退格：12345 → 123 ----
     {1200, false, 0, "pushButton_1"},
     {500,  false, 0, "pushButton_2"},
@@ -65,7 +65,7 @@ const std::vector<Step> kScript = {
     {700,  false, 0, "pushButton_Divide"},
     {700,  false, 0, "pushButton_0"},
     {800,  false, 0, "pushButton_Equal"},
-    {3500, false, 0, "pushButton_Clear"},
+    {2500, false, 0, "pushButton_Clear"},
     // ---- 连续运算：2 + 3 + 4 = 9 ----
     {1500, false, 0, "pushButton_2"},
     {700,  false, 0, "pushButton_Add"},
@@ -73,7 +73,7 @@ const std::vector<Step> kScript = {
     {900,  false, 0, "pushButton_Add"},
     {700,  false, 0, "pushButton_4"},
     {800,  false, 0, "pushButton_Equal"},
-    {3000, false, 0, "pushButton_Clear"},
+    {2500, false, 0, "pushButton_Clear"},
     // ---- 连按等号：2 + 3 = 5, = 8, = 11 ----
     {1500, false, 0, "pushButton_2"},
     {700,  false, 0, "pushButton_Add"},
@@ -81,18 +81,49 @@ const std::vector<Step> kScript = {
     {800,  false, 0, "pushButton_Equal"},
     {1200, false, 0, "pushButton_Equal"},
     {1200, false, 0, "pushButton_Equal"},
-    {3000, false, 0, "pushButton_Clear"},
+    {2500, false, 0, "pushButton_Clear"},
     // ---- 重复小数点：7 . . 8 → 7.8 ----
     {1500, false, 0, "pushButton_7"},
     {800,  false, 0, "pushButton_Point"},
     {800,  false, 0, "pushButton_Point"},
     {800,  false, 0, "pushButton_8"},
-    {3500, false, 0, "pushButton_Clear"},
+    {2500, false, 0, "pushButton_Clear"},
+    // ---- 科学键：81 √ = 9 ----
+    {2000, false, 0, "pushButton_8"},
+    {500,  false, 0, "pushButton_1"},
+    {800,  false, 0, "pushButton_Sqrt"},
+    {2200, false, 0, "pushButton_Clear"},
+    // ---- 科学键：9 x² = 81 ----
+    {1200, false, 0, "pushButton_9"},
+    {800,  false, 0, "pushButton_Square"},
+    {2200, false, 0, "pushButton_Clear"},
+    // ---- 科学键：8 1/x = 0.125 ----
+    {1200, false, 0, "pushButton_8"},
+    {800,  false, 0, "pushButton_Inverse"},
+    {2200, false, 0, "pushButton_Clear"},
+    // ---- CE：12 + 3 CE 4 = 16 ----
+    {1200, false, 0, "pushButton_1"},
+    {500,  false, 0, "pushButton_2"},
+    {700,  false, 0, "pushButton_Add"},
+    {500,  false, 0, "pushButton_3"},
+    {1000, false, 0, "pushButton_ClearEntry"},
+    {700,  false, 0, "pushButton_4"},
+    {700,  false, 0, "pushButton_Equal"},
+    {2500, false, 0, "pushButton_Clear"},
+    // ---- 键盘科学键：36 @ √、12 q 平方 ----
+    {1500, true, Qt::Key_3, nullptr},
+    {500,  true, Qt::Key_6, nullptr},
+    {700,  true, Qt::Key_At, nullptr},
+    {2200, false, 0, "pushButton_Clear"},
+    {1200, true, Qt::Key_1, nullptr},
+    {500,  true, Qt::Key_2, nullptr},
+    {700,  true, Qt::Key_Q, nullptr},
+    {2500, false, 0, "pushButton_Clear"},
     {2000, false, 0, nullptr},   // 收尾停顿
 };
 
-/** 演示节奏系数：整体放慢，便于观众跟随（2 = 每步时长加倍） */
-constexpr int kSpeedFactor = 2;
+/** 演示节奏系数：整体放慢，便于观众跟随 */
+constexpr double kSpeedFactor = 1.5;
 
 } // namespace
 
@@ -127,12 +158,12 @@ int main(int argc, char *argv[])
         }
 
         if (index < static_cast<int>(kScript.size())) {
-            timer->start(kScript[index].delayMs * kSpeedFactor);
+            timer->start(qRound(kScript[index].delayMs * kSpeedFactor));
         } else {
             QTimer::singleShot(500, &window, []() { QApplication::quit(); });
         }
     });
 
-    timer->start(kScript.front().delayMs * kSpeedFactor);
+    timer->start(qRound(kScript.front().delayMs * kSpeedFactor));
     return app.exec();
 }

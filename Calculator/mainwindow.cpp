@@ -76,6 +76,14 @@ void MainWindow::onButtonClicked()
         toggleSign();
     } else if (name == QStringLiteral("pushButton_Percent")) {
         applyPercent();
+    } else if (name == QStringLiteral("pushButton_ClearEntry")) {
+        clearEntry();
+    } else if (name == QStringLiteral("pushButton_Inverse")) {
+        applyInverse();
+    } else if (name == QStringLiteral("pushButton_Square")) {
+        applySquare();
+    } else if (name == QStringLiteral("pushButton_Sqrt")) {
+        applySqrt();
     } else if (name == QStringLiteral("pushButton_Add")) {
         applyOperator(QStringLiteral("+"));
     } else if (name == QStringLiteral("pushButton_Subtract")) {
@@ -150,6 +158,19 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         break;
     case Qt::Key_Delete:
         clearEntry();
+        flashButton(ui->pushButton_ClearEntry);
+        break;
+    case Qt::Key_R:          // r → 1/x（与 Windows 计算器一致）
+        applyInverse();
+        flashButton(ui->pushButton_Inverse);
+        break;
+    case Qt::Key_Q:          // q → x²
+        applySquare();
+        flashButton(ui->pushButton_Square);
+        break;
+    case Qt::Key_At:         // @ → √
+        applySqrt();
+        flashButton(ui->pushButton_Sqrt);
         break;
     default:
         QMainWindow::keyPressEvent(event);   // 其他按键（Tab、Alt 等）交给基类
@@ -381,6 +402,59 @@ void MainWindow::applyPercent()
 }
 
 /**
+ * @brief 倒数 1/x：x 为 0 时无法计算，转入错误状态
+ */
+void MainWindow::applyInverse()
+{
+    if (m_hasError) {
+        return;
+    }
+    const double value = m_currentInput.toDouble();
+    ui->labelExpression->setText(QStringLiteral("1/(%1)").arg(formatResult(value)));
+    if (qFuzzyIsNull(value)) {
+        enterErrorState(tr("除数不能为零"));
+        return;
+    }
+    m_currentInput = formatResult(1.0 / value);
+    m_waitingForNewOperand = true;
+    updateDisplay();
+}
+
+/**
+ * @brief 平方 x²
+ */
+void MainWindow::applySquare()
+{
+    if (m_hasError) {
+        return;
+    }
+    const double value = m_currentInput.toDouble();
+    ui->labelExpression->setText(QStringLiteral("sqr(%1)").arg(formatResult(value)));
+    m_currentInput = formatResult(value * value);
+    m_waitingForNewOperand = true;
+    updateDisplay();
+}
+
+/**
+ * @brief 开平方 √：负数开方无实数解，转入错误状态
+ */
+void MainWindow::applySqrt()
+{
+    if (m_hasError) {
+        return;
+    }
+    const double value = m_currentInput.toDouble();
+    ui->labelExpression->setText(QStringLiteral("√(%1)").arg(formatResult(value)));
+    if (value < 0) {
+        enterErrorState(tr("无效输入"));
+        return;
+    }
+    m_currentInput = formatResult(std::sqrt(value));
+    m_waitingForNewOperand = true;
+    updateDisplay();
+}
+
+/**
  * @brief 刷新主显示屏内容
  */
 void MainWindow::updateDisplay()
@@ -457,8 +531,12 @@ void MainWindow::applyStyleSheet()
     setRole(ui->pushButton_Divide, "operator");
     setRole(ui->pushButton_Equal, "equal");
     setRole(ui->pushButton_Clear, "function");
+    setRole(ui->pushButton_ClearEntry, "function");
     setRole(ui->pushButton_Backspace, "function");
     setRole(ui->pushButton_Percent, "function");
+    setRole(ui->pushButton_Inverse, "function");
+    setRole(ui->pushButton_Square, "function");
+    setRole(ui->pushButton_Sqrt, "function");
     setRole(ui->pushButton_Sign, "function");
 
     setStyleSheet(QStringLiteral(R"(
